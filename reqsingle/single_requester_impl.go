@@ -32,12 +32,17 @@ func (s *SingleRequesterImpl) Do(req *Request) (*Response, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// 设置请求头
+	if req.Header != nil {
+		httpReq.Header = req.Header
+	} else {
+		httpReq.Header = make(http.Header)
+	}
 	// 设置 content-type
 	if contentType != "" {
 		httpReq.Header.Set("Content-Type", contentType)
 	}
-	// 设置请求头
-	httpReq.Header = req.Header
 
 	// 发送请求
 	httpResp, err := s.Client.GetClient().Do(httpReq)

@@ -11,6 +11,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 )
@@ -120,7 +121,18 @@ func (c *Client) BuildRequestBody(contentType method.HTTPContentType, body inter
 		switch v := body.(type) {
 		case map[string]interface{}:
 			for key, val := range v {
-				_ = writer.WriteField(key, fmt.Sprintf("%v", val))
+				if file, ok := val.(*os.File); ok {
+					fileWriter, err := writer.CreateFormFile(key, file.Name())
+					if err != nil {
+						return nil, "", err
+					}
+					_, err = io.Copy(fileWriter, file)
+					if err != nil {
+						return nil, "", err
+					}
+				} else {
+					_ = writer.WriteField(key, fmt.Sprintf("%v", val))
+				}
 			}
 		default:
 			return nil, "", fmt.Errorf("unsupported body type for multipart: %T", body)
