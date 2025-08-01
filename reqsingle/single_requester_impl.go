@@ -13,6 +13,10 @@ type SingleRequesterImpl struct {
 	Client *client.Client
 }
 
+func (s *SingleRequesterImpl) GetClient() *client.Client {
+	return s.Client
+}
+
 func (s *SingleRequesterImpl) Do(req *Request) (*Response, error) {
 	startTime := time.Now()
 	// 设置请求超时

@@ -2,6 +2,8 @@ package client
 
 import (
 	"bytes"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"github.com/GoEnthusiast/httpreq/method"
@@ -21,10 +23,46 @@ type Client struct {
 	client    *http.Client
 }
 
+// SetTLS 设置 TLS
+func (c *Client) SetTLS(certPath, keyPath, caPath string) error {
+	var (
+		cert       tls.Certificate
+		caCert     []byte
+		err        error
+		caCertPool *x509.CertPool
+	)
+	if certPath != "" && keyPath != "" {
+		cert, err = tls.LoadX509KeyPair(certPath, keyPath)
+		if err != nil {
+			return fmt.Errorf("failed to load client cert/key: %w", err)
+		}
+	}
+	if caPath != "" {
+		caCert, err = os.ReadFile(caPath)
+		if err != nil {
+			return fmt.Errorf("failed to read CA cert: %w", err)
+		}
+		caCertPool = x509.NewCertPool()
+		if ok := caCertPool.AppendCertsFromPEM(caCert); !ok {
+			return fmt.Errorf("failed to append CA cert to pool")
+		}
+	}
+	tlsConfig := &tls.Config{}
+	if cert.Certificate != nil {
+		tlsConfig.Certificates = []tls.Certificate{cert}
+	}
+	if caCertPool != nil {
+		tlsConfig.RootCAs = caCertPool
+	}
+	c.transport.TLSClientConfig = tlsConfig
+	c.applyTransport()
+	return nil
+}
+
 // SetTransport 设置 transport
 func (c *Client) SetTransport(transport *http.Transport) {
 	c.transport = transport
-	c.client.Transport = c.transport
+	c.applyTransport()
 }
 
 // SetTimeout 设置请求超时时间
@@ -40,6 +78,7 @@ func (c *Client) SetProxy(proxies string) error {
 			return err
 		}
 		c.transport.Proxy = http.ProxyURL(proxyUrl)
+		c.applyTransport()
 	}
 	return nil
 }
@@ -47,31 +86,37 @@ func (c *Client) SetProxy(proxies string) error {
 // SetMaxIdleConns 设置最大空闲连接数
 func (c *Client) SetMaxIdleConns(maxIdleConns int) {
 	c.transport.MaxIdleConns = maxIdleConns
+	c.applyTransport()
 }
 
 // SetMaxIdleConnsPerHost 设置每个主机（host）允许的最大空闲连接数
 func (c *Client) SetMaxIdleConnsPerHost(maxIdleConnsPerHost int) {
 	c.transport.MaxIdleConnsPerHost = maxIdleConnsPerHost
+	c.applyTransport()
 }
 
 // SetMaxConnsPerHost 设置每个主机允许的最大连接数
 func (c *Client) SetMaxConnsPerHost(maxConnsPerHost int) {
 	c.transport.MaxConnsPerHost = maxConnsPerHost
+	c.applyTransport()
 }
 
 // SetIdleConnTimeout 设置空闲连接超时时间
 func (c *Client) SetIdleConnTimeout(idleConnTimeout time.Duration) {
 	c.transport.IdleConnTimeout = idleConnTimeout
+	c.applyTransport()
 }
 
 // SetTLSHandshakeTimeout 设置TLS握手超时时间
 func (c *Client) SetTLSHandshakeTimeout(tlsHandshakeTimeout time.Duration) {
 	c.transport.TLSHandshakeTimeout = tlsHandshakeTimeout
+	c.applyTransport()
 }
 
 // SetExpectContinueTimeout 设置Expect: 100-continue 机制的超时时间
 func (c *Client) SetExpectContinueTimeout(expectContinueTimeout time.Duration) {
 	c.transport.ExpectContinueTimeout = expectContinueTimeout
+	c.applyTransport()
 }
 
 // GetClient 获取 http.Client
@@ -154,6 +199,10 @@ func (c *Client) BuildRequestBody(contentType method.HTTPContentType, body inter
 	}
 }
 
+func (c *Client) applyTransport() {
+	c.client.Transport = c.transport
+}
+
 func New(enableHttp2 bool) *Client {
 	result := &Client{
 		client: &http.Client{},
@@ -175,7 +224,6 @@ func New(enableHttp2 bool) *Client {
 	if enableHttp2 {
 		_ = http2.ConfigureTransport(result.transport)
 	}
-
-	result.client.Transport = result.transport
+	result.applyTransport()
 	return result
 }

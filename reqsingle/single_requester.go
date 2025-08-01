@@ -1,6 +1,7 @@
 package reqsingle
 
 import (
+	"github.com/GoEnthusiast/httpreq/client"
 	"github.com/GoEnthusiast/httpreq/method"
 	"net/http"
 	"time"
@@ -28,4 +29,5 @@ type Response struct {
 
 type SingleRequester interface {
 	Do(req *Request) (*Response, error)
+	GetClient() *client.Client
 }

@@ -28,12 +28,7 @@ func TestSingleRequesterDoWithGetHasParams(t *testing.T) {
 	s = NewSingleRequester(false)
 	req := &Request{
 		Method: method.GET,
-		URL:    "http://127.0.0.1:9000/testGetHasParams",
-		Body: map[string]interface{}{
-			"name": "GoEnthusiast",
-			"age":  18,
-		},
-		ContentType: method.ContentTypeForm,
+		URL:    "http://127.0.0.1:9000/testGetHasParams?name=GoEnthusiast&age=18",
 	}
 	resp, err := s.Do(req)
 	if err != nil {
@@ -92,5 +87,26 @@ func TestSingleRequesterDoWithPostForm(t *testing.T) {
 		return
 	}
 
+	t.Log(string(resp.ResponseBody))
+}
+
+// POST application/x-www-form-urlencoded 请求
+func TestSingleRequesterDoWithPostFormUrlencoded(t *testing.T) {
+	var s SingleRequester
+	s = NewSingleRequester(false)
+	req := &Request{
+		Method: method.POST,
+		URL:    "http://127.0.0.1:9000/testPostFormUrlEncoded",
+		Body: map[string]string{
+			"name": "GoEnthusiast",
+			"age":  "18",
+		},
+		ContentType: method.ContentTypeForm,
+	}
+	resp, err := s.Do(req)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 	t.Log(string(resp.ResponseBody))
 }
