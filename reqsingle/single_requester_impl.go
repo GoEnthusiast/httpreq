@@ -14,6 +14,14 @@ type SingleRequesterImpl struct {
 	Client           *http.Client
 }
 
+func (s *SingleRequesterImpl) GetTransportSetting() *transportsetting.TransportSetting {
+	return s.TransportSetting
+}
+
+func (s *SingleRequesterImpl) GetClient() *http.Client {
+	return s.Client
+}
+
 func (s *SingleRequesterImpl) Do(req *Request) *Response {
 	startTime := time.Now()
 	resp := &Response{

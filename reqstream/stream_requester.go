@@ -2,6 +2,7 @@ package reqstream
 
 import (
 	"github.com/GoEnthusiast/httpreq/method"
+	"github.com/GoEnthusiast/httpreq/transportsetting"
 	"net/http"
 	"time"
 )
@@ -30,4 +31,6 @@ type Response struct {
 type StreamRequester interface {
 	Do(req *Request)
 	ResponseCh() <-chan *Response
+	GetTransportSetting() *transportsetting.TransportSetting
+	GetClient() *http.Client
 }

@@ -16,6 +16,14 @@ type StreamRequesterImpl struct {
 	respCh           chan *Response
 }
 
+func (s *StreamRequesterImpl) GetTransportSetting() *transportsetting.TransportSetting {
+	return s.TransportSetting
+}
+
+func (s *StreamRequesterImpl) GetClient() *http.Client {
+	return s.Client
+}
+
 func (s *StreamRequesterImpl) worker() {
 	for req := range s.reqCh {
 		s.handleRequest(req)

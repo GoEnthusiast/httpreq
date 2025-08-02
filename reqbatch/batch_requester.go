@@ -2,6 +2,7 @@ package reqsingle
 
 import (
 	"github.com/GoEnthusiast/httpreq/method"
+	"github.com/GoEnthusiast/httpreq/transportsetting"
 	"net/http"
 	"time"
 )
@@ -29,4 +30,6 @@ type Response struct {
 
 type BatchRequester interface {
 	Do(req []*Request) []*Response
+	GetTransportSetting() *transportsetting.TransportSetting
+	GetClient() *http.Client
 }
