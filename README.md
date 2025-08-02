@@ -530,17 +530,6 @@ for i := 0; i < len(allRequests); i += batchSize {
 }
 ```
 
-### 5. 日志记录
-
-```go
-resp := requester.Do(req)
-log.Printf("请求 %s %s - 状态码: %d, 耗时: %.2fms",
-    req.Method, req.URL, resp.ResponseStatusCode, resp.Duration)
-
-if resp.Error != nil {
-    log.Printf("请求失败: %v", resp.Error)
-}
-```
 
 ## ❓ 常见问题
 
@@ -612,43 +601,6 @@ requester.SetMaxIdleConnsPerHost(10)
 streamRequester := reqstream.NewStreamRequester(false, 10) // 10个并发
 ```
 
-## 🤝 贡献指南
-
-我们欢迎所有形式的贡献！
-
-### 如何贡献
-
-1. **Fork** 这个仓库
-2. 创建你的特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交你的更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 打开一个 **Pull Request**
-
-### 开发环境设置
-
-```bash
-# 克隆仓库
-git clone https://github.com/GoEnthusiast/httpreq.git
-cd httpreq
-
-# 运行测试
-go test ./...
-
-# 运行基准测试
-go test -bench=. ./...
-```
-
-### 代码规范
-
-- 遵循 Go 官方代码规范
-- 添加适当的注释和文档
-- 确保所有测试通过
-- 提交信息使用清晰的描述
-
-## 📄 许可证
-
-本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
-
 ## 📝 更新日志
 
 ### v1.0.0
@@ -657,12 +609,3 @@ go test -bench=. ./...
 - 🔧 支持多种内容类型和代理设置
 - 📊 提供详细的响应信息
 
-## 📞 联系我们
-
-- 项目主页: [https://github.com/GoEnthusiast/httpreq](https://github.com/GoEnthusiast/httpreq)
-- 问题反馈: [Issues](https://github.com/GoEnthusiast/httpreq/issues)
-- 功能建议: [Discussions](https://github.com/GoEnthusiast/httpreq/discussions)
-
----
-
-⭐ 如果这个项目对你有帮助，请给我们一个星标！
