@@ -10,18 +10,10 @@ import (
 )
 
 type StreamRequesterImpl struct {
-	TransportSetting *transportsetting.TransportSetting
-	Client           *http.Client
-	reqCh            chan *Request
-	respCh           chan *Response
-}
-
-func (s *StreamRequesterImpl) GetTransportSetting() *transportsetting.TransportSetting {
-	return s.TransportSetting
-}
-
-func (s *StreamRequesterImpl) GetClient() *http.Client {
-	return s.Client
+	*transportsetting.TransportSetting
+	client *http.Client
+	reqCh  chan *Request
+	respCh chan *Response
 }
 
 func (s *StreamRequesterImpl) worker() {
@@ -69,11 +61,11 @@ func (s *StreamRequesterImpl) handleRequest(req *Request) {
 		return
 	}
 
-	s.Client.Transport = s.TransportSetting.GetTransport()
+	s.client.Transport = s.TransportSetting.GetTransport()
 	// 设置请求超时时间
-	s.Client.Timeout = req.Timeout
+	s.client.Timeout = req.Timeout
 	// 发送请求
-	httpResp, err := s.Client.Do(httpReq)
+	httpResp, err := s.client.Do(httpReq)
 	if err != nil {
 		resp.Error = fmt.Errorf("do http request error: %s", err)
 		return
@@ -102,7 +94,7 @@ func NewStreamRequester(enableHttp2 bool, concurrency int) StreamRequester {
 	transportSetting := transportsetting.NewTransportSetting(enableHttp2)
 	s := &StreamRequesterImpl{
 		TransportSetting: transportSetting,
-		Client: &http.Client{
+		client: &http.Client{
 			Transport: transportSetting.GetTransport(),
 		},
 		reqCh:  make(chan *Request, concurrency), // 可调节的缓冲通道

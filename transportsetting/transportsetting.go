@@ -70,7 +70,6 @@ func (c *TransportSetting) SetProxy(proxies interface{}) error {
 	defer c.mu.Unlock()
 
 	if proxies == nil {
-		c.transport.Proxy = nil
 		return nil
 	}
 

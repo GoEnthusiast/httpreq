@@ -10,16 +10,8 @@ import (
 )
 
 type SingleRequesterImpl struct {
-	TransportSetting *transportsetting.TransportSetting
-	Client           *http.Client
-}
-
-func (s *SingleRequesterImpl) GetTransportSetting() *transportsetting.TransportSetting {
-	return s.TransportSetting
-}
-
-func (s *SingleRequesterImpl) GetClient() *http.Client {
-	return s.Client
+	*transportsetting.TransportSetting
+	client *http.Client
 }
 
 func (s *SingleRequesterImpl) Do(req *Request) *Response {
@@ -61,11 +53,11 @@ func (s *SingleRequesterImpl) Do(req *Request) *Response {
 		return resp
 	}
 
-	s.Client.Transport = s.TransportSetting.GetTransport()
+	s.client.Transport = s.TransportSetting.GetTransport()
 	// 设置请求超时时间
-	s.Client.Timeout = req.Timeout
+	s.client.Timeout = req.Timeout
 	// 发送请求
-	httpResp, err := s.Client.Do(httpReq)
+	httpResp, err := s.client.Do(httpReq)
 	if err != nil {
 		resp.Error = fmt.Errorf("do http request error: %s", err.Error())
 		return resp
@@ -87,7 +79,7 @@ func NewSingleRequester(enableHttp2 bool) SingleRequester {
 	transportSetting := transportsetting.NewTransportSetting(enableHttp2)
 	return &SingleRequesterImpl{
 		TransportSetting: transportSetting,
-		Client: &http.Client{
+		client: &http.Client{
 			Transport: transportSetting.GetTransport(),
 		},
 	}

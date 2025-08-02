@@ -10,16 +10,8 @@ import (
 )
 
 type BatchRequesterImpl struct {
-	transportSetting *transportsetting.TransportSetting
-	client           *http.Client
-}
-
-func (s *BatchRequesterImpl) GetTransportSetting() *transportsetting.TransportSetting {
-	return s.transportSetting
-}
-
-func (s *BatchRequesterImpl) GetClient() *http.Client {
-	return s.client
+	*transportsetting.TransportSetting
+	client *http.Client
 }
 
 func (s *BatchRequesterImpl) Do(reqs []*Request) []*Response {
@@ -64,13 +56,13 @@ func (s *BatchRequesterImpl) Do(reqs []*Request) []*Response {
 				httpReq.Header.Set("Content-Type", contentType)
 			}
 			// 设置代理 IP
-			proxyE := s.transportSetting.SetProxy(r.Proxy)
+			proxyE := s.TransportSetting.SetProxy(r.Proxy)
 			if proxyE != nil {
 				resp.Error = fmt.Errorf("set proxy error: %s", proxyE.Error())
 				return
 			}
 
-			s.client.Transport = s.transportSetting.GetTransport()
+			s.client.Transport = s.TransportSetting.GetTransport()
 			// 设置请求超时时间
 			s.client.Timeout = req.Timeout
 			// 发送请求
@@ -103,7 +95,7 @@ func (s *BatchRequesterImpl) Do(reqs []*Request) []*Response {
 func NewBatchRequester(enableHttp2 bool) BatchRequester {
 	transportSetting := transportsetting.NewTransportSetting(enableHttp2)
 	return &BatchRequesterImpl{
-		transportSetting: transportSetting,
+		TransportSetting: transportSetting,
 		client: &http.Client{
 			Transport: transportSetting.GetTransport(),
 		},

@@ -2,7 +2,6 @@ package reqsingle
 
 import (
 	"github.com/GoEnthusiast/httpreq/method"
-	"github.com/GoEnthusiast/httpreq/transportsetting"
 	"net/http"
 	"time"
 )
@@ -30,6 +29,13 @@ type Response struct {
 
 type SingleRequester interface {
 	Do(req *Request) *Response
-	GetTransportSetting() *transportsetting.TransportSetting
-	GetClient() *http.Client
+	SetTLS(certPath, keyPath, caPath string) error
+	SetTransport(transport *http.Transport)
+	SetProxy(proxies interface{}) error
+	SetMaxIdleConns(maxIdleConns int)
+	SetMaxIdleConnsPerHost(maxIdleConnsPerHost int)
+	SetMaxConnsPerHost(maxConnsPerHost int)
+	SetIdleConnTimeout(idleConnTimeout time.Duration)
+	SetTLSHandshakeTimeout(tlsHandshakeTimeout time.Duration)
+	SetExpectContinueTimeout(expectContinueTimeout time.Duration)
 }
