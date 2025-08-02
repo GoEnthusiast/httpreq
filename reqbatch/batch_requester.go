@@ -1,10 +1,11 @@
-package reqsingle
+package reqbatch
 
 import (
-	"github.com/GoEnthusiast/httpreq/types/request"
-	"github.com/GoEnthusiast/httpreq/types/response"
 	"net/http"
 	"time"
+
+	"github.com/GoEnthusiast/httpreq/types/request"
+	"github.com/GoEnthusiast/httpreq/types/response"
 )
 
 type BatchRequester interface {

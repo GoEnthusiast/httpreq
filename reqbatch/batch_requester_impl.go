@@ -1,19 +1,13 @@
-package reqsingle
+package reqbatch
 
 import (
-	"fmt"
-	"github.com/GoEnthusiast/httpreq/builder"
-	"github.com/GoEnthusiast/httpreq/transportsetting"
+	"github.com/GoEnthusiast/httpreq/core"
 	"github.com/GoEnthusiast/httpreq/types/request"
 	"github.com/GoEnthusiast/httpreq/types/response"
-	"io"
-	"net/http"
-	"time"
 )
 
 type BatchRequesterImpl struct {
-	*transportsetting.TransportSetting
-	client *http.Client
+	*core.RequestHandler
 }
 
 func (s *BatchRequesterImpl) Do(reqs []*request.Request) []*response.Response {
@@ -24,65 +18,8 @@ func (s *BatchRequesterImpl) Do(reqs []*request.Request) []*response.Response {
 	for i := range reqs {
 		req := reqs[i] // 避免 goroutine 闭包引用错误
 		go func(r *request.Request) {
-			startTime := time.Now()
-			resp := &response.Response{
-				Request:   r,
-				StartTime: startTime,
-			}
-			defer func() {
-				resp.EndTime = time.Now()
-				resp.Duration = resp.EndTime.Sub(startTime).Seconds()
-				respCh <- resp
-			}()
-
-			// 处理请求参数
-			body, contentType, bodyE := builder.BuildRequestBody(r.ContentType, r.Body)
-			if bodyE != nil {
-				resp.Error = fmt.Errorf("build request body error: %s", bodyE.Error())
-				return
-			}
-			// 构造 http 请求
-			httpReq, err := http.NewRequest(string(r.Method), r.URL, body)
-			if err != nil {
-				resp.Error = fmt.Errorf("new http request error: %s", err.Error())
-				return
-			}
-			// 设置请求头
-			if r.Header != nil {
-				httpReq.Header = r.Header
-			} else {
-				httpReq.Header = make(http.Header)
-			}
-			// 设置 content-type
-			if contentType != "" {
-				httpReq.Header.Set("Content-Type", contentType)
-			}
-			// 设置代理 IP
-			proxyE := s.TransportSetting.SetProxy(r.Proxy)
-			if proxyE != nil {
-				resp.Error = fmt.Errorf("set proxy error: %s", proxyE.Error())
-				return
-			}
-
-			s.client.Transport = s.TransportSetting.GetTransport()
-			// 设置请求超时时间
-			s.client.Timeout = req.Timeout
-			// 发送请求
-			httpResp, err := s.client.Do(httpReq)
-			if err != nil {
-				resp.Error = fmt.Errorf("do http request error: %s", err.Error())
-				return
-			}
-			defer httpResp.Body.Close()
-
-			respBody, err := io.ReadAll(httpResp.Body)
-			if err != nil {
-				resp.Error = fmt.Errorf("read response body error: %s", err.Error())
-				return
-			}
-
-			resp.ResponseStatusCode = httpResp.StatusCode
-			resp.ResponseBody = respBody
+			resp := s.RequestHandler.ProcessRequest(r)
+			respCh <- resp
 		}(req)
 	}
 
@@ -95,11 +32,7 @@ func (s *BatchRequesterImpl) Do(reqs []*request.Request) []*response.Response {
 }
 
 func NewBatchRequester(enableHttp2 bool) BatchRequester {
-	transportSetting := transportsetting.NewTransportSetting(enableHttp2)
 	return &BatchRequesterImpl{
-		TransportSetting: transportSetting,
-		client: &http.Client{
-			Transport: transportSetting.GetTransport(),
-		},
+		RequestHandler: core.NewRequestHandler(enableHttp2),
 	}
 }

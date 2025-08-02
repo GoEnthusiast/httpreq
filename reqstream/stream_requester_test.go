@@ -3,6 +3,7 @@ package reqstream
 import (
 	"fmt"
 	"github.com/GoEnthusiast/httpreq/method"
+	"github.com/GoEnthusiast/httpreq/types/request"
 	"testing"
 	"time"
 )
@@ -14,7 +15,7 @@ func TestStreamRequesterDoWithGetNoParams(t *testing.T) {
 
 	go func() {
 		for {
-			req := &Request{
+			req := &request.Request{
 				Method: method.GET,
 				URL:    "http://127.0.0.1:9000/testGetNoParams",
 			}

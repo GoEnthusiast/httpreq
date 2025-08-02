@@ -1,10 +1,11 @@
-package reqsingle
+package reqbatch
 
 import (
-	"github.com/GoEnthusiast/httpreq/method"
-	"github.com/GoEnthusiast/httpreq/types/request"
 	"testing"
 	"time"
+
+	"github.com/GoEnthusiast/httpreq/method"
+	"github.com/GoEnthusiast/httpreq/types/request"
 )
 
 // TestBatchRequesterDoWithGetNoParams 无参数 GET 请求
