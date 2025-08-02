@@ -11,13 +11,13 @@ func TestBatchRequesterDoWithGetNoParams(t *testing.T) {
 	startTime := time.Now()
 	var s BatchRequester
 	s = NewBatchRequester(false)
-	var reqs []Request
+	var reqs []*Request
 	for i := 0; i < 5; i++ {
 		req := &Request{
 			Method: method.GET,
 			URL:    "http://127.0.0.1:9000/testGetNoParams",
 		}
-		reqs = append(reqs, *req)
+		reqs = append(reqs, req)
 	}
 	resps := s.Do(reqs)
 	t.Log("resps len:", len(resps))

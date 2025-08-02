@@ -14,17 +14,17 @@ type BatchRequesterImpl struct {
 	Client           *http.Client
 }
 
-func (s *BatchRequesterImpl) Do(reqs []Request) []*Response {
+func (s *BatchRequesterImpl) Do(reqs []*Request) []*Response {
 	var (
 		respCh = make(chan *Response, len(reqs)) // 带缓冲的通道，收集响应
 	)
 
 	for i := range reqs {
 		req := reqs[i] // 避免 goroutine 闭包引用错误
-		go func(r Request) {
+		go func(r *Request) {
 			startTime := time.Now()
 			resp := &Response{
-				Request:   &r,
+				Request:   r,
 				StartTime: startTime,
 			}
 			defer func() {

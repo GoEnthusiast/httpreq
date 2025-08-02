@@ -28,5 +28,5 @@ type Response struct {
 }
 
 type BatchRequester interface {
-	Do(req []Request) []*Response
+	Do(req []*Request) []*Response
 }

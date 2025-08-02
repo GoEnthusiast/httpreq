@@ -14,7 +14,7 @@ func TestSingleRequesterDoWithGetNoParams(t *testing.T) {
 	s = NewSingleRequester(false)
 	req := &Request{
 		Method: method.GET,
-		URL:    "http://127.0.0.1:9000/testGetNoParams",
+		URL:    "https://httpbin.org/get",
 	}
 	resp := s.Do(req)
 	if resp.Error != nil {

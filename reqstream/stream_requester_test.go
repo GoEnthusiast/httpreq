@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// TestStreamRequesterDoWithGetNoParams 流失提交请求
+// TestStreamRequesterDoWithGetNoParams 流式提交请求
 func TestStreamRequesterDoWithGetNoParams(t *testing.T) {
 	var s StreamRequester
 	s = NewStreamRequester(false, 5)
