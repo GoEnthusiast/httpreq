@@ -31,6 +31,7 @@
 
 ```bash
 go get github.com/GoEnthusiast/httpreq
+go mod tidy
 ```
 
 ## 🚀 快速开始
@@ -41,31 +42,35 @@ go get github.com/GoEnthusiast/httpreq
 package main
 
 import (
-    "fmt"
-    "github.com/GoEnthusiast/httpreq/method"
-    "github.com/GoEnthusiast/httpreq/reqsingle"
+	"github.com/GoEnthusiast/httpreq/method"
+	"github.com/GoEnthusiast/httpreq/reqsingle"
+	"github.com/GoEnthusiast/httpreq/types/request"
+	"testing"
 )
 
-func main() {
-    // 创建单次提交请求器 (false 表示不启用 HTTP/2)
-    requester := reqsingle.NewSingleRequester(false)
-    
-    // 发送 GET 请求
-    req := &reqsingle.Request{
-        Method: method.GET,
-        URL:    "https://httpbin.org/get",
-    }
-    
-    resp := requester.Do(req)
-    if resp.Error != nil {
-        fmt.Printf("请求错误: %v\n", resp.Error)
-        return
-    }
-    
-    fmt.Printf("状态码: %d\n", resp.ResponseStatusCode)
-    fmt.Printf("响应内容: %s\n", string(resp.ResponseBody))
-    fmt.Printf("请求耗时: %.2fms\n", resp.Duration)
+func TestSingleGetMethod(t *testing.T) {
+	// 创建单次提交请求器 (false 表示不启用 HTTP/2)
+	requester := reqsingle.NewSingleRequester(false)
+
+	// 发送 GET 请求
+	req := &request.Request{
+		Method: method.GET,
+		URL:    "http://127.0.0.1:9000/testGetNoParams",
+	}
+
+	resp := requester.Do(req)
+	if resp.Error != nil {
+		t.Logf("请求错误: %v\n", resp.Error)
+		return
+	}
+
+	t.Logf("状态码: %d\n", resp.ResponseStatusCode)
+	t.Logf("响应内容: %s\n", string(resp.ResponseBody))
+	t.Logf("请求开始时间: %s\n", resp.StartTime.Format("2006-01-02 15:04:05"))
+	t.Logf("请求结束时间: %s\n", resp.EndTime.Format("2006-01-02 15:04:05"))
+	t.Logf("请求耗时: %.2fs\n", resp.Duration)
 }
+
 ```
 
 ### 批量提交请求示例
@@ -74,45 +79,41 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "github.com/GoEnthusiast/httpreq/method"
-    "github.com/GoEnthusiast/httpreq/reqbatch"
+	"github.com/GoEnthusiast/httpreq/method"
+	"github.com/GoEnthusiast/httpreq/reqbatch"
+	"github.com/GoEnthusiast/httpreq/types/request"
+	"testing"
 )
 
-func main() {
-    // 创建批量提交请求器
-    batchRequester := reqbatch.NewBatchRequester(false)
-    
-    // 准备多个请求
-    requests := []*reqbatch.Request{
-        {
-            Method: method.GET,
-            URL:    "https://httpbin.org/get",
-        },
-        {
-            Method: method.POST,
-            URL:    "https://httpbin.org/post",
-            Body: map[string]interface{}{
-                "name": "张三",
-                "age":  25,
-            },
-            ContentType: method.ContentTypeJSON,
-        },
-    }
-    
-    // 执行批量提交请求
-    responses := batchRequester.Do(requests)
-    
-    // 处理响应
-    for i, resp := range responses {
-        if resp.Error != nil {
-            fmt.Printf("请求 %d 失败: %v\n", i+1, resp.Error)
-            continue
-        }
-        fmt.Printf("请求 %d 成功 - 状态码: %d\n", i+1, resp.ResponseStatusCode)
-        fmt.Printf("响应内容: %s\n", string(resp.ResponseBody))
-        fmt.Printf("请求耗时: %.2fms\n", resp.Duration)
-    }
+func TestBatchGetMethod(t *testing.T) {
+	// 创建批量提交请求器
+	batchRequester := reqbatch.NewBatchRequester(false)
+
+	// 准备多个请求
+	requests := []*request.Request{}
+	for i := 0; i < 10; i++ {
+		requests = append(requests, &request.Request{
+			Method: method.GET,
+			URL:    "http://127.0.0.1:9000/testGetNoParams",
+		})
+	}
+
+	// 执行批量提交请求
+	responses := batchRequester.Do(requests)
+
+	// 处理响应
+	for _, resp := range responses {
+		if resp.Error != nil {
+			t.Logf("请求错误: %v\n", resp.Error)
+			return
+		}
+
+		t.Logf("状态码: %d\n", resp.ResponseStatusCode)
+		t.Logf("响应内容: %s\n", string(resp.ResponseBody))
+		t.Logf("请求开始时间: %s\n", resp.StartTime.Format("2006-01-02 15:04:05"))
+		t.Logf("请求结束时间: %s\n", resp.EndTime.Format("2006-01-02 15:04:05"))
+		t.Logf("请求耗时: %.2fs\n", resp.Duration)
+	}
 }
 ```
 
@@ -122,46 +123,48 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "github.com/GoEnthusiast/httpreq/method"
-    "github.com/GoEnthusiast/httpreq/reqstream"
+	"github.com/GoEnthusiast/httpreq/method"
+	"github.com/GoEnthusiast/httpreq/reqstream"
+	"github.com/GoEnthusiast/httpreq/types/request"
+	"testing"
 )
 
-func main() {
-    // 创建流式提交请求器，设置并发数为 5
-    streamRequester := reqstream.NewStreamRequester(false, 5)
-    
-    // 启动请求发送协程
-    go func() {
-        for {
-            streamRequester.Do(&reqstream.Request{
-                Method: method.GET,
-                URL:    "https://httpbin.org/get",
-            })
-        }
-    }()
-    
-    // 监听响应
-    for {
-        resp := <-streamRequester.ResponseCh()
-        if resp.Error != nil {
-            fmt.Printf("请求错误: %v\n", resp.Error)
-            continue
-        }
-        fmt.Printf("状态码: %d\n", resp.ResponseStatusCode)
-        fmt.Printf("响应内容: %s\n", string(resp.ResponseBody))
-        fmt.Printf("请求耗时: %.2fms\n", resp.Duration)
-    }
+func TestStreamGetMethod(t *testing.T) {
+	// 创建流式提交请求器，设置并发数为 5
+	streamRequester := reqstream.NewStreamRequester(false, 5)
+
+	// 启动请求发送协程
+	go func() {
+		for i := 0; i < 20; i++ {
+			req := &request.Request{
+				Method: method.GET,
+				URL:    "http://127.0.0.1:9000/testGetNoParams",
+			}
+			streamRequester.Do(req)
+			t.Log("发送请求")
+		}
+	}()
+
+	// 监听响应
+	for i := 0; i < 20; i++ {
+		resp := <-streamRequester.ResponseCh()
+		if resp.Error != nil {
+			t.Logf("请求错误: %v\n", resp.Error)
+			return
+		}
+
+		t.Logf("状态码: %d\n", resp.ResponseStatusCode)
+		t.Logf("响应内容: %s\n", string(resp.ResponseBody))
+		t.Logf("请求开始时间: %s\n", resp.StartTime.Format("2006-01-02 15:04:05"))
+		t.Logf("请求结束时间: %s\n", resp.EndTime.Format("2006-01-02 15:04:05"))
+		t.Logf("请求耗时: %.2fs\n", resp.Duration)
+	}
 }
 ```
 
 ## 📖 详细使用指南
 
-### 1. 单次提交请求 (Single Request)
-
-单次提交请求适用于需要发送单个 HTTP 请求的场景。
-
-#### 1.1 GET 请求
+### 1. GET 请求
 
 ```go
 // 简单 GET 请求
@@ -187,7 +190,7 @@ req := &reqsingle.Request{
 }
 ```
 
-#### 1.2 POST 请求
+### 2. POST 请求
 
 **JSON 请求:**
 ```go
@@ -232,9 +235,50 @@ req := &reqsingle.Request{
 }
 ```
 
-#### 1.3 代理设置
+### 3. 代理设置
 
-**固定代理:**
+**在请求器中设置固定代理(适合持续使用长效代理)**
+```go
+// 创建单次提交请求器 (false 表示不启用 HTTP/2)
+requester := reqsingle.NewSingleRequester(false)
+
+// 若直接在请求器设置固定代理，请求参数中可以不设置代理
+if err := requester.SetProxy("http://username:password@proxy.example.com:8080"); err != nil {
+t.Logf("设置代理错误: %v\n", err)
+}
+
+// 发送 GET 请求
+req := &request.Request{
+Method: method.GET,
+URL:    "https://httpbin.org/get",
+}
+
+resp := requester.Do(req)
+```
+
+**在请求器中设置动态代理(适合从自己的 IP 池中随机获取代理)**
+```go
+// 创建单次提交请求器 (false 表示不启用 HTTP/2)
+requester := reqsingle.NewSingleRequester(false)
+
+// 若直接在请求器设置固定代理，请求参数中可以不设置代理
+if err := requester.SetProxy(func(r *http.Request) (*url.URL, error) {
+    myProxy := getProxy()
+    return url.Parse("http://" + myProxy)
+}); err != nil {
+    t.Logf("设置代理错误: %v\n", err)
+}
+
+// 发送 GET 请求
+req := &request.Request{
+    Method: method.GET,
+    URL:    "https://httpbin.org/get",
+}
+
+resp := requester.Do(req)
+```
+
+**在请求体中设置固定代理(适合持续使用长效代理):**
 ```go
 req := &reqsingle.Request{
     Method: method.GET,
@@ -243,7 +287,7 @@ req := &reqsingle.Request{
 }
 ```
 
-**动态代理:**
+**在请求体中设置动态代理(适合每个请求都从自己的 IP 池中随机获取代理):**
 ```go
 req := &reqsingle.Request{
     Method: method.GET,
@@ -256,115 +300,13 @@ req := &reqsingle.Request{
 }
 ```
 
-#### 1.4 超时设置
+### 4. 超时设置
 
 ```go
 req := &reqsingle.Request{
-    Method:  method.POST,
+    Method:  method.GET,
     URL:     "https://api.example.com/data",
     Timeout: 30 * time.Second, // 30秒超时
-    Body: map[string]interface{}{
-        "data": "some data",
-    },
-    ContentType: method.ContentTypeJSON,
-}
-```
-
-### 2. 批量提交请求 (Batch Request)
-
-批量提交请求适用于需要同时发送多个请求的场景，如数据同步、批量操作等。
-
-```go
-package main
-
-import (
-    "fmt"
-    "github.com/GoEnthusiast/httpreq/method"
-    "github.com/GoEnthusiast/httpreq/reqbatch"
-)
-
-func main() {
-    // 创建批量提交请求器
-    batchRequester := reqbatch.NewBatchRequester(false)
-    
-    // 准备多个请求
-    requests := []*reqbatch.Request{
-        {
-            Method: method.GET,
-            URL:    "https://api.example.com/users/1",
-        },
-        {
-            Method: method.GET,
-            URL:    "https://api.example.com/users/2",
-        },
-        {
-            Method: method.POST,
-            URL:    "https://api.example.com/users",
-            Body: map[string]interface{}{
-                "name": "新用户",
-            },
-            ContentType: method.ContentTypeJSON,
-        },
-    }
-    
-    // 执行批量提交请求
-    responses := batchRequester.Do(requests)
-    
-    // 处理响应
-    for i, resp := range responses {
-        if resp.Error != nil {
-            fmt.Printf("请求 %d 失败: %v\n", i+1, resp.Error)
-            continue
-        }
-        fmt.Printf("请求 %d 成功: %s\n", i+1, string(resp.ResponseBody))
-    }
-}
-```
-
-### 3. 流式提交请求 (Stream Request)
-
-流式提交请求适用于需要持续发送请求并异步接收响应的场景，如压力测试、数据采集等。
-
-**工作原理:**
-- 使用固定数量的 worker 协程处理请求
-- 通过通道异步发送请求和接收响应
-- 支持并发控制，避免资源耗尽
-
-```go
-package main
-
-import (
-    "fmt"
-    "time"
-    "github.com/GoEnthusiast/httpreq/method"
-    "github.com/GoEnthusiast/httpreq/reqstream"
-)
-
-func main() {
-    // 创建流式提交请求器，设置并发数为 5
-    streamRequester := reqstream.NewStreamRequester(false, 5)
-    
-    // 启动请求发送协程
-    go func() {
-        for i := 0; i < 10; i++ {
-            req := &reqstream.Request{
-                Method: method.GET,
-                URL:    "https://httpbin.org/get",
-            }
-            streamRequester.Do(req)
-        }
-    }()
-    
-    // 监听响应
-    for i := 0; i < 10; i++ {
-        resp := <-streamRequester.ResponseCh()
-        if resp.Error != nil {
-            fmt.Printf("请求错误: %v\n", resp.Error)
-            continue
-        }
-        fmt.Printf("响应 %d: %s\n", i+1, string(resp.ResponseBody))
-        fmt.Printf("请求耗时: %.2fms\n", resp.Duration)
-    }
 }
 ```
 
