@@ -19,4 +19,5 @@ type BatchRequester interface {
 	SetIdleConnTimeout(idleConnTimeout time.Duration)
 	SetTLSHandshakeTimeout(tlsHandshakeTimeout time.Duration)
 	SetExpectContinueTimeout(expectContinueTimeout time.Duration)
+	SetDisableKeepAlives(disableKeepAlives bool)
 }

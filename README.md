@@ -445,7 +445,10 @@ requester.SetMaxConnsPerHost(100)
 requester.SetIdleConnTimeout(90 * time.Second)
 requester.SetTLSHandshakeTimeout(10 * time.Second)
 requester.SetExpectContinueTimeout(1 * time.Second)
-```
+
+// 设置 Keep-Alive 控制
+requester.SetDisableKeepAlives(false) // 启用 Keep-Alive（默认）
+// requester.SetDisableKeepAlives(true) // 禁用 Keep-Alive
 
 ## 🎯 最佳实践
 
@@ -594,6 +597,7 @@ requester := reqsingle.NewSingleRequester(true) // 启用 HTTP/2
 ```go
 requester.SetMaxIdleConns(100)
 requester.SetMaxIdleConnsPerHost(10)
+requester.SetDisableKeepAlives(false) // 启用 Keep-Alive 提高性能
 ```
 
 3. **使用流式提交请求进行并发处理**:

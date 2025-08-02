@@ -4,13 +4,14 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"golang.org/x/net/http2"
 	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"sync"
 	"time"
+
+	"golang.org/x/net/http2"
 )
 
 type TransportSetting struct {
@@ -141,6 +142,14 @@ func (c *TransportSetting) SetExpectContinueTimeout(expectContinueTimeout time.D
 	defer c.mu.Unlock()
 
 	c.transport.ExpectContinueTimeout = expectContinueTimeout
+}
+
+// SetDisableKeepAlives 设置是否禁用 HTTP Keep-Alive
+func (c *TransportSetting) SetDisableKeepAlives(disableKeepAlives bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.transport.DisableKeepAlives = disableKeepAlives
 }
 
 // GetTransport 获取 http.Transport
