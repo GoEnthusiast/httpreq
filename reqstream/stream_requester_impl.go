@@ -1,4 +1,4 @@
-package reqsingle
+package reqstream
 
 import (
 	"fmt"
@@ -9,12 +9,20 @@ import (
 	"time"
 )
 
-type SingleRequesterImpl struct {
+type StreamRequesterImpl struct {
 	TransportSetting *transportsetting.TransportSetting
 	Client           *http.Client
+	reqCh            chan *Request
+	respCh           chan *Response
 }
 
-func (s *SingleRequesterImpl) Do(req *Request) *Response {
+func (s *StreamRequesterImpl) worker() {
+	for req := range s.reqCh {
+		s.handleRequest(req)
+	}
+}
+
+func (s *StreamRequesterImpl) handleRequest(req *Request) {
 	startTime := time.Now()
 	resp := &Response{
 		Request:   req,
@@ -23,19 +31,19 @@ func (s *SingleRequesterImpl) Do(req *Request) *Response {
 	defer func() {
 		resp.EndTime = time.Now()
 		resp.Duration = resp.EndTime.Sub(startTime).Seconds()
+		s.respCh <- resp
 	}()
-
 	// 处理请求参数
 	body, contentType, bodyE := builder.BuildRequestBody(req.ContentType, req.Body)
 	if bodyE != nil {
-		resp.Error = fmt.Errorf("build request body error: %s", bodyE.Error())
-		return resp
+		resp.Error = fmt.Errorf("build request body error: %s", bodyE)
+		return
 	}
 	// 构造 http 请求
 	httpReq, err := http.NewRequest(string(req.Method), req.URL, body)
 	if err != nil {
-		resp.Error = fmt.Errorf("new http request error: %s", err.Error())
-		return resp
+		resp.Error = fmt.Errorf("new http request error: %s", err)
+		return
 	}
 	// 设置请求头
 	if req.Header != nil {
@@ -49,8 +57,8 @@ func (s *SingleRequesterImpl) Do(req *Request) *Response {
 	}
 	// 设置代理 IP
 	if proxyE := s.TransportSetting.SetProxy(req.Proxy); proxyE != nil {
-		resp.Error = fmt.Errorf("set proxy error: %s", proxyE.Error())
-		return resp
+		resp.Error = fmt.Errorf("set proxy error: %s", proxyE)
+		return
 	}
 
 	s.Client.Transport = s.TransportSetting.GetTransport()
@@ -59,28 +67,47 @@ func (s *SingleRequesterImpl) Do(req *Request) *Response {
 	// 发送请求
 	httpResp, err := s.Client.Do(httpReq)
 	if err != nil {
-		resp.Error = fmt.Errorf("do http request error: %s", err.Error())
-		return resp
+		resp.Error = fmt.Errorf("do http request error: %s", err)
+		return
 	}
 	defer httpResp.Body.Close()
 
 	respBody, err := io.ReadAll(httpResp.Body)
 	if err != nil {
-		resp.Error = fmt.Errorf("read response body error: %s", err.Error())
-		return resp
+		resp.Error = fmt.Errorf("read response body error: %s", err)
+		return
 	}
 
 	resp.ResponseStatusCode = httpResp.StatusCode
 	resp.ResponseBody = respBody
-	return resp
 }
 
-func NewSingleRequester(enableHttp2 bool) SingleRequester {
+func (s *StreamRequesterImpl) Do(req *Request) {
+	s.reqCh <- req
+}
+
+func (s *StreamRequesterImpl) ResponseCh() <-chan *Response {
+	return s.respCh
+}
+
+func NewStreamRequester(enableHttp2 bool, concurrency int) StreamRequester {
 	transportSetting := transportsetting.NewTransportSetting(enableHttp2)
-	return &SingleRequesterImpl{
+	s := &StreamRequesterImpl{
 		TransportSetting: transportSetting,
 		Client: &http.Client{
 			Transport: transportSetting.GetTransport(),
 		},
+		reqCh:  make(chan *Request, concurrency), // 可调节的缓冲通道
+		respCh: make(chan *Response),
 	}
+
+	if concurrency <= 0 {
+		concurrency = 1
+	}
+
+	// 启动固定数量的 worker
+	for i := 0; i < concurrency; i++ {
+		go s.worker()
+	}
+	return s
 }
