@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/GoEnthusiast/httpreq/builder"
 	"github.com/GoEnthusiast/httpreq/transportsetting"
+	"github.com/GoEnthusiast/httpreq/types/request"
+	"github.com/GoEnthusiast/httpreq/types/response"
 	"io"
 	"net/http"
 	"time"
@@ -14,9 +16,9 @@ type SingleRequesterImpl struct {
 	client *http.Client
 }
 
-func (s *SingleRequesterImpl) Do(req *Request) *Response {
+func (s *SingleRequesterImpl) Do(req *request.Request) *response.Response {
 	startTime := time.Now()
-	resp := &Response{
+	resp := &response.Response{
 		Request:   req,
 		StartTime: startTime,
 	}

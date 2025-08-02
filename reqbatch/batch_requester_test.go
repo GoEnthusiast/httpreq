@@ -2,6 +2,7 @@ package reqsingle
 
 import (
 	"github.com/GoEnthusiast/httpreq/method"
+	"github.com/GoEnthusiast/httpreq/types/request"
 	"testing"
 	"time"
 )
@@ -11,9 +12,9 @@ func TestBatchRequesterDoWithGetNoParams(t *testing.T) {
 	startTime := time.Now()
 	var s BatchRequester
 	s = NewBatchRequester(false)
-	var reqs []*Request
+	var reqs []*request.Request
 	for i := 0; i < 5; i++ {
-		req := &Request{
+		req := &request.Request{
 			Method: method.GET,
 			URL:    "http://127.0.0.1:9000/testGetNoParams",
 		}

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/GoEnthusiast/httpreq/builder"
 	"github.com/GoEnthusiast/httpreq/transportsetting"
+	"github.com/GoEnthusiast/httpreq/types/request"
+	"github.com/GoEnthusiast/httpreq/types/response"
 	"io"
 	"net/http"
 	"time"
@@ -12,8 +14,8 @@ import (
 type StreamRequesterImpl struct {
 	*transportsetting.TransportSetting
 	client *http.Client
-	reqCh  chan *Request
-	respCh chan *Response
+	reqCh  chan *request.Request
+	respCh chan *response.Response
 }
 
 func (s *StreamRequesterImpl) worker() {
@@ -22,9 +24,9 @@ func (s *StreamRequesterImpl) worker() {
 	}
 }
 
-func (s *StreamRequesterImpl) handleRequest(req *Request) {
+func (s *StreamRequesterImpl) handleRequest(req *request.Request) {
 	startTime := time.Now()
-	resp := &Response{
+	resp := &response.Response{
 		Request:   req,
 		StartTime: startTime,
 	}
@@ -82,11 +84,11 @@ func (s *StreamRequesterImpl) handleRequest(req *Request) {
 	resp.ResponseBody = respBody
 }
 
-func (s *StreamRequesterImpl) Do(req *Request) {
+func (s *StreamRequesterImpl) Do(req *request.Request) {
 	s.reqCh <- req
 }
 
-func (s *StreamRequesterImpl) ResponseCh() <-chan *Response {
+func (s *StreamRequesterImpl) ResponseCh() <-chan *response.Response {
 	return s.respCh
 }
 
@@ -97,8 +99,8 @@ func NewStreamRequester(enableHttp2 bool, concurrency int) StreamRequester {
 		client: &http.Client{
 			Transport: transportSetting.GetTransport(),
 		},
-		reqCh:  make(chan *Request, concurrency), // 可调节的缓冲通道
-		respCh: make(chan *Response),
+		reqCh:  make(chan *request.Request, concurrency), // 可调节的缓冲通道
+		respCh: make(chan *response.Response),
 	}
 
 	if concurrency <= 0 {

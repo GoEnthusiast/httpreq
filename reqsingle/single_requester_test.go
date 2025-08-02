@@ -2,6 +2,7 @@ package reqsingle
 
 import (
 	"github.com/GoEnthusiast/httpreq/method"
+	"github.com/GoEnthusiast/httpreq/types/request"
 	"net/http"
 	"net/url"
 	"os"
@@ -12,7 +13,7 @@ import (
 func TestSingleRequesterDoWithGetNoParams(t *testing.T) {
 	var s SingleRequester
 	s = NewSingleRequester(false)
-	req := &Request{
+	req := &request.Request{
 		Method: method.GET,
 		URL:    "https://httpbin.org/get",
 	}
@@ -28,7 +29,7 @@ func TestSingleRequesterDoWithGetNoParams(t *testing.T) {
 func TestSingleRequesterDoWithGetHasParams(t *testing.T) {
 	var s SingleRequester
 	s = NewSingleRequester(false)
-	req := &Request{
+	req := &request.Request{
 		Method: method.GET,
 		URL:    "http://127.0.0.1:9000/testGetHasParams?name=GoEnthusiast&age=18",
 	}
@@ -44,7 +45,7 @@ func TestSingleRequesterDoWithGetHasParams(t *testing.T) {
 func TestSingleRequesterDoWithFixedProxy(t *testing.T) {
 	var s SingleRequester
 	s = NewSingleRequester(false)
-	req := &Request{
+	req := &request.Request{
 		Method: method.GET,
 		URL:    "https://httpbin.org/get",
 		Proxy:  "http://HU27BJ815D8783ID:9F41DA0D9516D5CE@http-dyn.abuyun.com:9020",
@@ -61,7 +62,7 @@ func TestSingleRequesterDoWithFixedProxy(t *testing.T) {
 func TestSingleRequesterDoWithRandomProxy(t *testing.T) {
 	var s SingleRequester
 	s = NewSingleRequester(false)
-	req := &Request{
+	req := &request.Request{
 		Method: method.GET,
 		URL:    "https://httpbin.org/get",
 		Proxy: func(req *http.Request) (*url.URL, error) {
@@ -82,7 +83,7 @@ func TestSingleRequesterDoWithRandomProxy(t *testing.T) {
 func TestSingleRequesterDoWithPostJson(t *testing.T) {
 	var s SingleRequester
 	s = NewSingleRequester(false)
-	req := &Request{
+	req := &request.Request{
 		Method: method.POST,
 		URL:    "http://127.0.0.1:9000/testPostJson",
 		Body: map[string]interface{}{
@@ -110,7 +111,7 @@ func TestSingleRequesterDoWithPostForm(t *testing.T) {
 
 	var s SingleRequester
 	s = NewSingleRequester(false)
-	req := &Request{
+	req := &request.Request{
 		Method: method.POST,
 		URL:    "http://127.0.0.1:9000/testPostForm",
 		Body: map[string]interface{}{
@@ -132,7 +133,7 @@ func TestSingleRequesterDoWithPostForm(t *testing.T) {
 func TestSingleRequesterDoWithPostFormUrlencoded(t *testing.T) {
 	var s SingleRequester
 	s = NewSingleRequester(false)
-	req := &Request{
+	req := &request.Request{
 		Method: method.POST,
 		URL:    "http://127.0.0.1:9000/testPostFormUrlEncoded",
 		Body: map[string]string{

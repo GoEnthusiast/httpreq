@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/GoEnthusiast/httpreq/builder"
 	"github.com/GoEnthusiast/httpreq/transportsetting"
+	"github.com/GoEnthusiast/httpreq/types/request"
+	"github.com/GoEnthusiast/httpreq/types/response"
 	"io"
 	"net/http"
 	"time"
@@ -14,16 +16,16 @@ type BatchRequesterImpl struct {
 	client *http.Client
 }
 
-func (s *BatchRequesterImpl) Do(reqs []*Request) []*Response {
+func (s *BatchRequesterImpl) Do(reqs []*request.Request) []*response.Response {
 	var (
-		respCh = make(chan *Response, len(reqs)) // 带缓冲的通道，收集响应
+		respCh = make(chan *response.Response, len(reqs)) // 带缓冲的通道，收集响应
 	)
 
 	for i := range reqs {
 		req := reqs[i] // 避免 goroutine 闭包引用错误
-		go func(r *Request) {
+		go func(r *request.Request) {
 			startTime := time.Now()
-			resp := &Response{
+			resp := &response.Response{
 				Request:   r,
 				StartTime: startTime,
 			}
@@ -85,7 +87,7 @@ func (s *BatchRequesterImpl) Do(reqs []*Request) []*Response {
 	}
 
 	// 收集结果
-	responses := make([]*Response, 0, len(reqs))
+	responses := make([]*response.Response, 0, len(reqs))
 	for i := 0; i < len(reqs); i++ {
 		responses = append(responses, <-respCh)
 	}
