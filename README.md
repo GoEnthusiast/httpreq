@@ -337,7 +337,7 @@ type Response struct {
     Error              error     // 错误信息
     StartTime          time.Time // 开始时间
     EndTime            time.Time // 结束时间
-    Duration           float64   // 耗时(毫秒)
+    Duration           float64   // 耗时(秒)
 }
 ```
 
