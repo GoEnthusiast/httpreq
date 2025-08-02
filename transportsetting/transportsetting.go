@@ -1,3 +1,5 @@
+// Package transportsetting provides HTTP transport configuration utilities
+// 包 transportsetting 提供 HTTP 传输层配置工具
 package transportsetting
 
 import (
@@ -14,12 +16,15 @@ import (
 	"golang.org/x/net/http2"
 )
 
+// TransportSetting manages HTTP transport configuration with thread-safe operations
+// TransportSetting 管理 HTTP 传输层配置，提供线程安全操作
 type TransportSetting struct {
-	transport *http.Transport
-	mu        sync.Mutex
+	transport *http.Transport // HTTP transport instance / HTTP 传输层实例
+	mu        sync.Mutex      // Mutex for thread safety / 用于线程安全的互斥锁
 }
 
-// SetTLS 设置 TLS
+// SetTLS configures TLS settings with certificate files
+// SetTLS 使用证书文件配置 TLS 设置
 func (c *TransportSetting) SetTLS(certPath, keyPath, caPath string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -57,7 +62,8 @@ func (c *TransportSetting) SetTLS(certPath, keyPath, caPath string) error {
 	return nil
 }
 
-// SetTransport 设置自定义 transport
+// SetTransport sets a custom HTTP transport
+// SetTransport 设置自定义 HTTP 传输层
 func (c *TransportSetting) SetTransport(transport *http.Transport) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -65,7 +71,8 @@ func (c *TransportSetting) SetTransport(transport *http.Transport) {
 	c.transport = transport
 }
 
-// SetProxy 设置代理
+// SetProxy configures proxy settings
+// SetProxy 配置代理设置
 func (c *TransportSetting) SetProxy(proxies interface{}) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -96,6 +103,7 @@ func (c *TransportSetting) SetProxy(proxies interface{}) error {
 	return nil
 }
 
+// SetMaxIdleConns sets the maximum number of idle connections
 // SetMaxIdleConns 设置最大空闲连接数
 func (c *TransportSetting) SetMaxIdleConns(maxIdleConns int) {
 	c.mu.Lock()
@@ -104,7 +112,8 @@ func (c *TransportSetting) SetMaxIdleConns(maxIdleConns int) {
 	c.transport.MaxIdleConns = maxIdleConns
 }
 
-// SetMaxIdleConnsPerHost 设置每个主机（host）允许的最大空闲连接数
+// SetMaxIdleConnsPerHost sets the maximum number of idle connections per host
+// SetMaxIdleConnsPerHost 设置每个主机的最大空闲连接数
 func (c *TransportSetting) SetMaxIdleConnsPerHost(maxIdleConnsPerHost int) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -112,7 +121,8 @@ func (c *TransportSetting) SetMaxIdleConnsPerHost(maxIdleConnsPerHost int) {
 	c.transport.MaxIdleConnsPerHost = maxIdleConnsPerHost
 }
 
-// SetMaxConnsPerHost 设置每个主机允许的最大连接数
+// SetMaxConnsPerHost sets the maximum number of connections per host
+// SetMaxConnsPerHost 设置每个主机的最大连接数
 func (c *TransportSetting) SetMaxConnsPerHost(maxConnsPerHost int) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -120,6 +130,7 @@ func (c *TransportSetting) SetMaxConnsPerHost(maxConnsPerHost int) {
 	c.transport.MaxConnsPerHost = maxConnsPerHost
 }
 
+// SetIdleConnTimeout sets the idle connection timeout
 // SetIdleConnTimeout 设置空闲连接超时时间
 func (c *TransportSetting) SetIdleConnTimeout(idleConnTimeout time.Duration) {
 	c.mu.Lock()
@@ -128,7 +139,8 @@ func (c *TransportSetting) SetIdleConnTimeout(idleConnTimeout time.Duration) {
 	c.transport.IdleConnTimeout = idleConnTimeout
 }
 
-// SetTLSHandshakeTimeout 设置TLS握手超时时间
+// SetTLSHandshakeTimeout sets the TLS handshake timeout
+// SetTLSHandshakeTimeout 设置 TLS 握手超时时间
 func (c *TransportSetting) SetTLSHandshakeTimeout(tlsHandshakeTimeout time.Duration) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -136,7 +148,8 @@ func (c *TransportSetting) SetTLSHandshakeTimeout(tlsHandshakeTimeout time.Durat
 	c.transport.TLSHandshakeTimeout = tlsHandshakeTimeout
 }
 
-// SetExpectContinueTimeout 设置Expect: 100-continue 机制的超时时间
+// SetExpectContinueTimeout sets the Expect: 100-continue timeout
+// SetExpectContinueTimeout 设置 Expect: 100-continue 超时时间
 func (c *TransportSetting) SetExpectContinueTimeout(expectContinueTimeout time.Duration) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -144,6 +157,7 @@ func (c *TransportSetting) SetExpectContinueTimeout(expectContinueTimeout time.D
 	c.transport.ExpectContinueTimeout = expectContinueTimeout
 }
 
+// SetDisableKeepAlives sets whether to disable HTTP Keep-Alive
 // SetDisableKeepAlives 设置是否禁用 HTTP Keep-Alive
 func (c *TransportSetting) SetDisableKeepAlives(disableKeepAlives bool) {
 	c.mu.Lock()
@@ -152,7 +166,8 @@ func (c *TransportSetting) SetDisableKeepAlives(disableKeepAlives bool) {
 	c.transport.DisableKeepAlives = disableKeepAlives
 }
 
-// GetTransport 获取 http.Transport
+// GetTransport returns the configured HTTP transport
+// GetTransport 返回配置的 HTTP 传输层
 func (c *TransportSetting) GetTransport() *http.Transport {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -160,20 +175,22 @@ func (c *TransportSetting) GetTransport() *http.Transport {
 	return c.transport
 }
 
+// NewTransportSetting creates a new transport setting with optional HTTP/2 support
+// NewTransportSetting 创建一个新的传输层设置，支持可选的 HTTP/2
 func NewTransportSetting(enableHttp2 bool) *TransportSetting {
 	result := &TransportSetting{
 		transport: &http.Transport{
 			DialContext: (&net.Dialer{
-				Timeout:   30 * time.Second, // 建立 TCP 连接的最大等待时间
-				KeepAlive: 30 * time.Second, // TCP KeepAlive 的时间间隔
+				Timeout:   30 * time.Second, // Maximum wait time for TCP connection establishment / 建立 TCP 连接的最大等待时间
+				KeepAlive: 30 * time.Second, // TCP KeepAlive interval / TCP KeepAlive 的时间间隔
 			}).DialContext,
-			DisableKeepAlives:     false,            // 是否禁用 HTTP Keep-Alive（false 表示开启 Keep-Alive）
-			MaxIdleConns:          1000,             // 全局最大空闲连接数
-			MaxIdleConnsPerHost:   1000,             // 每个主机（host）允许的最大空闲连接数
-			MaxConnsPerHost:       1000,             // 每个主机允许的最大连接数（包括正在使用和空闲的）
-			IdleConnTimeout:       90 * time.Second, // 空闲连接超过 90 秒会被关闭
-			TLSHandshakeTimeout:   10 * time.Second, // TLS 握手最长等待时间
-			ExpectContinueTimeout: 1 * time.Second,  // 针对 HTTP/1.1 的 Expect: 100-continue 机制。客户端会在发送 body 前等服务器确认。这个字段设定等待时间，1 秒内没响应就直接发 body。
+			DisableKeepAlives:     false,            // Whether to disable HTTP Keep-Alive (false means enabled) / 是否禁用 HTTP Keep-Alive（false 表示开启 Keep-Alive）
+			MaxIdleConns:          1000,             // Global maximum idle connections / 全局最大空闲连接数
+			MaxIdleConnsPerHost:   1000,             // Maximum idle connections per host / 每个主机的最大空闲连接数
+			MaxConnsPerHost:       1000,             // Maximum connections per host (including active and idle) / 每个主机的最大连接数（包括正在使用和空闲的）
+			IdleConnTimeout:       90 * time.Second, // Idle connections will be closed after 90 seconds / 空闲连接超过 90 秒会被关闭
+			TLSHandshakeTimeout:   10 * time.Second, // Maximum TLS handshake wait time / TLS 握手最长等待时间
+			ExpectContinueTimeout: 1 * time.Second,  // For HTTP/1.1 Expect: 100-continue mechanism. Client waits for server confirmation before sending body. This field sets wait time, send body directly if no response within 1 second. / 针对 HTTP/1.1 的 Expect: 100-continue 机制。客户端会在发送 body 前等服务器确认。这个字段设定等待时间，1 秒内没响应就直接发 body。
 		},
 	}
 

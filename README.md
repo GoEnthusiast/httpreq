@@ -15,8 +15,6 @@
 - [API 参考](#api-参考)
 - [最佳实践](#最佳实践)
 - [常见问题](#常见问题)
-- [贡献指南](#贡献指南)
-- [许可证](#许可证)
 
 ## ✨ 特性
 
@@ -449,6 +447,7 @@ requester.SetExpectContinueTimeout(1 * time.Second)
 // 设置 Keep-Alive 控制
 requester.SetDisableKeepAlives(false) // 启用 Keep-Alive（默认）
 // requester.SetDisableKeepAlives(true) // 禁用 Keep-Alive
+```
 
 ## 🎯 最佳实践
 
