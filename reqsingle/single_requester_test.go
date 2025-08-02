@@ -2,6 +2,8 @@ package reqsingle
 
 import (
 	"github.com/GoEnthusiast/httpreq/method"
+	"net/http"
+	"net/url"
 	"os"
 	"testing"
 )
@@ -14,9 +16,9 @@ func TestSingleRequesterDoWithGetNoParams(t *testing.T) {
 		Method: method.GET,
 		URL:    "http://127.0.0.1:9000/testGetNoParams",
 	}
-	resp, err := s.Do(req)
-	if err != nil {
-		t.Error(err)
+	resp := s.Do(req)
+	if resp.Error != nil {
+		t.Error(resp.Error.Error())
 		return
 	}
 	t.Log(string(resp.ResponseBody))
@@ -30,9 +32,47 @@ func TestSingleRequesterDoWithGetHasParams(t *testing.T) {
 		Method: method.GET,
 		URL:    "http://127.0.0.1:9000/testGetHasParams?name=GoEnthusiast&age=18",
 	}
-	resp, err := s.Do(req)
-	if err != nil {
-		t.Error(err)
+	resp := s.Do(req)
+	if resp.Error != nil {
+		t.Error(resp.Error.Error())
+		return
+	}
+	t.Log(string(resp.ResponseBody))
+}
+
+// TestSingleRequesterDoWithFixedProxy 使用固定代理
+func TestSingleRequesterDoWithFixedProxy(t *testing.T) {
+	var s SingleRequester
+	s = NewSingleRequester(false)
+	req := &Request{
+		Method: method.GET,
+		URL:    "https://httpbin.org/get",
+		Proxy:  "http://HU27BJ815D8783ID:9F41DA0D9516D5CE@http-dyn.abuyun.com:9020",
+	}
+	resp := s.Do(req)
+	if resp.Error != nil {
+		t.Error(resp.Error.Error())
+		return
+	}
+	t.Log(string(resp.ResponseBody))
+}
+
+// TestSingleRequesterDoWithFixedProxy 使用随机代理
+func TestSingleRequesterDoWithRandomProxy(t *testing.T) {
+	var s SingleRequester
+	s = NewSingleRequester(false)
+	req := &Request{
+		Method: method.GET,
+		URL:    "https://httpbin.org/get",
+		Proxy: func(req *http.Request) (*url.URL, error) {
+			// 动态获取代理，这里可以调用自定义方法获取不同的代理 IP
+			proxyIP := "HU27BJ815D8783ID:9F41DA0D9516D5CE@http-dyn.abuyun.com:9020"
+			return url.Parse("http://" + proxyIP)
+		},
+	}
+	resp := s.Do(req)
+	if resp.Error != nil {
+		t.Error(resp.Error.Error())
 		return
 	}
 	t.Log(string(resp.ResponseBody))
@@ -51,12 +91,11 @@ func TestSingleRequesterDoWithPostJson(t *testing.T) {
 		},
 		ContentType: method.ContentTypeJSON,
 	}
-	resp, err := s.Do(req)
-	if err != nil {
-		t.Error(err)
+	resp := s.Do(req)
+	if resp.Error != nil {
+		t.Error(resp.Error.Error())
 		return
 	}
-
 	t.Log(string(resp.ResponseBody))
 }
 
@@ -81,12 +120,11 @@ func TestSingleRequesterDoWithPostForm(t *testing.T) {
 		},
 		ContentType: method.ContentTypeMulti,
 	}
-	resp, err := s.Do(req)
-	if err != nil {
-		t.Error(err)
+	resp := s.Do(req)
+	if resp.Error != nil {
+		t.Error(resp.Error.Error())
 		return
 	}
-
 	t.Log(string(resp.ResponseBody))
 }
 
@@ -103,9 +141,9 @@ func TestSingleRequesterDoWithPostFormUrlencoded(t *testing.T) {
 		},
 		ContentType: method.ContentTypeForm,
 	}
-	resp, err := s.Do(req)
-	if err != nil {
-		t.Error(err)
+	resp := s.Do(req)
+	if resp.Error != nil {
+		t.Error(resp.Error.Error())
 		return
 	}
 	t.Log(string(resp.ResponseBody))

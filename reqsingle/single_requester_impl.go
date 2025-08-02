@@ -1,42 +1,42 @@
 package reqsingle
 
 import (
-	"errors"
 	"fmt"
-	"github.com/GoEnthusiast/httpreq/client"
+	"github.com/GoEnthusiast/httpreq/builder"
+	"github.com/GoEnthusiast/httpreq/transportsetting"
 	"io"
 	"net/http"
 	"time"
 )
 
 type SingleRequesterImpl struct {
-	Client *client.Client
+	TransportSetting *transportsetting.TransportSetting
+	Client           *http.Client
 }
 
-func (s *SingleRequesterImpl) GetClient() *client.Client {
-	return s.Client
-}
-
-func (s *SingleRequesterImpl) Do(req *Request) (*Response, error) {
+func (s *SingleRequesterImpl) Do(req *Request) *Response {
 	startTime := time.Now()
-	// 设置请求超时
-	s.Client.SetTimeout(req.Timeout)
-	// 设置代理 IP
-	proxyE := s.Client.SetProxy(req.Proxy)
-	if proxyE != nil {
-		return nil, proxyE
+	resp := &Response{
+		Request:   req,
+		StartTime: startTime,
 	}
+	defer func() {
+		resp.EndTime = time.Now()
+		resp.Duration = resp.EndTime.Sub(startTime).Seconds()
+	}()
+
 	// 处理请求参数
-	body, contentType, bodyE := s.Client.BuildRequestBody(req.ContentType, req.Body)
+	body, contentType, bodyE := builder.BuildRequestBody(req.ContentType, req.Body)
 	if bodyE != nil {
-		return nil, bodyE
+		resp.Error = fmt.Errorf("build request body error: %s", bodyE.Error())
+		return resp
 	}
 	// 构造 http 请求
 	httpReq, err := http.NewRequest(string(req.Method), req.URL, body)
 	if err != nil {
-		return nil, err
+		resp.Error = fmt.Errorf("new http request error: %s", err.Error())
+		return resp
 	}
-
 	// 设置请求头
 	if req.Header != nil {
 		httpReq.Header = req.Header
@@ -47,37 +47,41 @@ func (s *SingleRequesterImpl) Do(req *Request) (*Response, error) {
 	if contentType != "" {
 		httpReq.Header.Set("Content-Type", contentType)
 	}
+	// 设置代理 IP
+	proxyE := s.TransportSetting.SetProxy(req.Proxy)
+	if proxyE != nil {
+		resp.Error = fmt.Errorf("set proxy error: %s", proxyE.Error())
+		return resp
+	}
 
+	s.Client.Transport = s.TransportSetting.GetTransport()
+	// 设置请求超时时间
+	s.Client.Timeout = req.Timeout
 	// 发送请求
-	httpResp, err := s.Client.GetClient().Do(httpReq)
+	httpResp, err := s.Client.Do(httpReq)
 	if err != nil {
-		return nil, err
+		resp.Error = fmt.Errorf("do http request error: %s", err.Error())
+		return resp
 	}
 	defer httpResp.Body.Close()
 
 	respBody, err := io.ReadAll(httpResp.Body)
 	if err != nil {
-		return nil, err
+		resp.Error = fmt.Errorf("read response body error: %s", err.Error())
+		return resp
 	}
 
-	if httpResp.StatusCode != http.StatusOK {
-		return nil, errors.New(fmt.Sprintf("http status code is %d\nresponse body is %s", httpResp.StatusCode, string(respBody)))
-	}
-
-	endTime := time.Now()
-	return &Response{
-		Request:            req,
-		ResponseStatusCode: httpResp.StatusCode,
-		ResponseBody:       respBody,
-		StartTime:          startTime,
-		EndTime:            endTime,
-		Duration:           endTime.Sub(startTime).Seconds(),
-	}, nil
+	resp.ResponseStatusCode = httpResp.StatusCode
+	resp.ResponseBody = respBody
+	return resp
 }
 
 func NewSingleRequester(enableHttp2 bool) SingleRequester {
-	c := client.New(enableHttp2)
+	transportSetting := transportsetting.NewTransportSetting(enableHttp2)
 	return &SingleRequesterImpl{
-		Client: c,
+		TransportSetting: transportSetting,
+		Client: &http.Client{
+			Transport: transportSetting.GetTransport(),
+		},
 	}
 }

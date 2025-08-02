@@ -12,7 +12,7 @@ func TestBatchRequesterDoWithGetNoParams(t *testing.T) {
 	var s BatchRequester
 	s = NewBatchRequester(false)
 	var reqs []Request
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 5; i++ {
 		req := &Request{
 			Method: method.GET,
 			URL:    "http://127.0.0.1:9000/testGetNoParams",

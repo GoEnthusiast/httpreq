@@ -2,146 +2,102 @@ package reqsingle
 
 import (
 	"fmt"
-	"github.com/GoEnthusiast/httpreq/client"
+	"github.com/GoEnthusiast/httpreq/builder"
+	"github.com/GoEnthusiast/httpreq/transportsetting"
 	"io"
 	"net/http"
-	"sync"
 	"time"
 )
 
 type BatchRequesterImpl struct {
-	Client *client.Client
+	TransportSetting *transportsetting.TransportSetting
+	Client           *http.Client
 }
 
-func (s *BatchRequesterImpl) GetClient() *client.Client {
-	return s.Client
-}
-
-func (s *BatchRequesterImpl) Do(reqs []Request) []Response {
+func (s *BatchRequesterImpl) Do(reqs []Request) []*Response {
 	var (
-		wg        sync.WaitGroup
-		mutex     sync.Mutex
-		responses []Response
+		respCh = make(chan *Response, len(reqs)) // 带缓冲的通道，收集响应
 	)
 
 	for i := range reqs {
-		req := reqs[i] // 避免闭包引用同一个变量
-		wg.Add(1)
-
-		go func() {
-			defer wg.Done()
-
+		req := reqs[i] // 避免 goroutine 闭包引用错误
+		go func(r Request) {
 			startTime := time.Now()
-			// 设置请求超时
-			s.Client.SetTimeout(req.Timeout)
+			resp := &Response{
+				Request:   &r,
+				StartTime: startTime,
+			}
+			defer func() {
+				resp.EndTime = time.Now()
+				resp.Duration = resp.EndTime.Sub(startTime).Seconds()
+				respCh <- resp
+			}()
 
-			// 设置代理 IP
-			if err := s.Client.SetProxy(req.Proxy); err != nil {
-				mutex.Lock()
-				responses = append(responses, Response{
-					Request:   &req,
-					Error:     fmt.Errorf("SetProxy failed for %s: %w", req.URL, err),
-					StartTime: startTime,
-					EndTime:   time.Now(),
-					Duration:  time.Now().Sub(startTime).Seconds(),
-				})
-				mutex.Unlock()
+			// 处理请求参数
+			body, contentType, bodyE := builder.BuildRequestBody(r.ContentType, r.Body)
+			if bodyE != nil {
+				resp.Error = fmt.Errorf("build request body error: %s", bodyE.Error())
 				return
 			}
-
-			// 构造请求体
-			body, contentType, err := s.Client.BuildRequestBody(req.ContentType, req.Body)
+			// 构造 http 请求
+			httpReq, err := http.NewRequest(string(r.Method), r.URL, body)
 			if err != nil {
-				mutex.Lock()
-				responses = append(responses, Response{
-					Request:   &req,
-					Error:     fmt.Errorf("BuildRequestBody failed for %s: %w", req.URL, err),
-					StartTime: startTime,
-					EndTime:   time.Now(),
-					Duration:  time.Now().Sub(startTime).Seconds(),
-				})
-				mutex.Unlock()
+				resp.Error = fmt.Errorf("new http request error: %s", err.Error())
 				return
 			}
-
-			httpReq, err := http.NewRequest(string(req.Method), req.URL, body)
-			if err != nil {
-				mutex.Lock()
-				responses = append(responses, Response{
-					Request:   &req,
-					Error:     fmt.Errorf("NewRequest failed for %s: %w", req.URL, err),
-					StartTime: startTime,
-					EndTime:   time.Now(),
-					Duration:  time.Now().Sub(startTime).Seconds(),
-				})
-				mutex.Unlock()
-				return
-			}
-
-			if req.Header != nil {
-				httpReq.Header = req.Header
+			// 设置请求头
+			if r.Header != nil {
+				httpReq.Header = r.Header
 			} else {
 				httpReq.Header = make(http.Header)
 			}
+			// 设置 content-type
 			if contentType != "" {
 				httpReq.Header.Set("Content-Type", contentType)
 			}
+			// 设置代理 IP
+			proxyE := s.TransportSetting.SetProxy(r.Proxy)
+			if proxyE != nil {
+				resp.Error = fmt.Errorf("set proxy error: %s", proxyE.Error())
+				return
+			}
 
-			// 执行请求
-			httpResp, err := s.Client.GetClient().Do(httpReq)
+			s.Client.Transport = s.TransportSetting.GetTransport()
+			// 设置请求超时时间
+			s.Client.Timeout = req.Timeout
+			// 发送请求
+			httpResp, err := s.Client.Do(httpReq)
 			if err != nil {
-				mutex.Lock()
-				responses = append(responses, Response{
-					Request:   &req,
-					Error:     fmt.Errorf("Do failed for %s: %w", req.URL, err),
-					StartTime: startTime,
-					EndTime:   time.Now(),
-					Duration:  time.Now().Sub(startTime).Seconds(),
-				})
-				mutex.Unlock()
+				resp.Error = fmt.Errorf("do http request error: %s", err.Error())
 				return
 			}
 			defer httpResp.Body.Close()
 
 			respBody, err := io.ReadAll(httpResp.Body)
 			if err != nil {
-				mutex.Lock()
-				responses = append(responses, Response{
-					Request:   &req,
-					Error:     fmt.Errorf("ReadAll failed for %s: %w", req.URL, err),
-					StartTime: startTime,
-					EndTime:   time.Now(),
-					Duration:  time.Now().Sub(startTime).Seconds(),
-				})
-				mutex.Unlock()
+				resp.Error = fmt.Errorf("read response body error: %s", err.Error())
 				return
 			}
 
-			endTime := time.Now()
-
-			resp := Response{
-				Request:            &req,
-				ResponseStatusCode: httpResp.StatusCode,
-				ResponseBody:       respBody,
-				StartTime:          startTime,
-				EndTime:            endTime,
-				Duration:           endTime.Sub(startTime).Seconds(),
-			}
-
-			mutex.Lock()
-			responses = append(responses, resp)
-			mutex.Unlock()
-		}()
+			resp.ResponseStatusCode = httpResp.StatusCode
+			resp.ResponseBody = respBody
+		}(req)
 	}
 
-	wg.Wait()
-
+	// 收集结果
+	responses := make([]*Response, 0, len(reqs))
+	for i := 0; i < len(reqs); i++ {
+		responses = append(responses, <-respCh)
+	}
 	return responses
 }
 
 func NewBatchRequester(enableHttp2 bool) BatchRequester {
-	c := client.New(enableHttp2)
+	transportSetting := transportsetting.NewTransportSetting(enableHttp2)
 	return &BatchRequesterImpl{
-		Client: c,
+		TransportSetting: transportSetting,
+		Client: &http.Client{
+			Transport: transportSetting.GetTransport(),
+		},
 	}
 }
