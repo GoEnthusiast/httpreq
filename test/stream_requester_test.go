@@ -1,10 +1,11 @@
 package main
 
 import (
+	"testing"
+
 	"github.com/GoEnthusiast/httpreq/method"
 	"github.com/GoEnthusiast/httpreq/reqstream"
 	"github.com/GoEnthusiast/httpreq/types/request"
-	"testing"
 )
 
 func TestStreamGetMethod(t *testing.T) {

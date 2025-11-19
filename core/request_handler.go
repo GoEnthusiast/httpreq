@@ -97,6 +97,8 @@ func (h *RequestHandler) ProcessRequest(req *request.Request) *response.Response
 	}
 	defer httpResp.Body.Close()
 
+	resp.ResponseHeader = httpResp.Header
+
 	// Read response body
 	// 读取响应体
 	respBody, err := io.ReadAll(httpResp.Body)

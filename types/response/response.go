@@ -3,6 +3,7 @@
 package response
 
 import (
+	"net/http"
 	"time"
 
 	"github.com/GoEnthusiast/httpreq/types/request"
@@ -14,6 +15,7 @@ type Response struct {
 	Request            *request.Request // Original request object / 原始请求对象
 	ResponseStatusCode int              // HTTP response status code / HTTP 响应状态码
 	ResponseBody       []byte           // Response body content / 响应体内容
+	ResponseHeader     http.Header      // Response header / 响应头
 	Error              error            // Error occurred during request / 请求过程中发生的错误
 	StartTime          time.Time        // Request start time / 请求开始时间
 	EndTime            time.Time        // Request end time / 请求结束时间

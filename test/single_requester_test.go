@@ -1,14 +1,15 @@
 package main
 
 import (
-	"github.com/GoEnthusiast/httpreq/method"
-	"github.com/GoEnthusiast/httpreq/reqsingle"
-	"github.com/GoEnthusiast/httpreq/types/request"
 	"net/http"
 	"net/url"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/GoEnthusiast/httpreq/method"
+	"github.com/GoEnthusiast/httpreq/reqsingle"
+	"github.com/GoEnthusiast/httpreq/types/request"
 )
 
 // TestSingleGetMethod 简单GET请求
@@ -290,4 +291,5 @@ func TestSingleGetMethodHasTimeout(t *testing.T) {
 	t.Logf("请求开始时间: %s\n", resp.StartTime.Format("2006-01-02 15:04:05"))
 	t.Logf("请求结束时间: %s\n", resp.EndTime.Format("2006-01-02 15:04:05"))
 	t.Logf("请求耗时: %.2fs\n", resp.Duration)
+	t.Logf("响应头: %v\n", resp.ResponseHeader)
 }

@@ -1,10 +1,11 @@
 package main
 
 import (
+	"testing"
+
 	"github.com/GoEnthusiast/httpreq/method"
 	"github.com/GoEnthusiast/httpreq/reqbatch"
 	"github.com/GoEnthusiast/httpreq/types/request"
-	"testing"
 )
 
 func TestBatchGetMethod(t *testing.T) {
