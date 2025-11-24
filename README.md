@@ -280,7 +280,7 @@ resp := requester.Do(req)
 
 **在请求体中设置固定代理(适合持续使用长效代理):**
 ```go
-req := &reqsingle.Request{
+req := &request.Request{
     Method: method.GET,
     URL:    "https://httpbin.org/ip",
     Proxy:  "http://username:password@proxy.example.com:8080",
@@ -289,7 +289,7 @@ req := &reqsingle.Request{
 
 **在请求体中设置动态代理(适合每个请求都从自己的 IP 池中随机获取代理):**
 ```go
-req := &reqsingle.Request{
+req := &request.Request{
     Method: method.GET,
     URL:    "https://httpbin.org/ip",
     Proxy: func(req *http.Request) (*url.URL, error) {
@@ -303,11 +303,24 @@ req := &reqsingle.Request{
 ### 4. 超时设置
 
 ```go
-req := &reqsingle.Request{
+req := &request.Request{
     Method:  method.GET,
     URL:     "https://api.example.com/data",
     Timeout: 30 * time.Second, // 30秒超时
 }
+```
+
+### 5. 设置 Cookiejar，实现会话保持。[非并发安全, 仅支持 single 请求器]
+
+```go
+// 使用默认 cookiejar
+requester := reqsingle.NewSingleRequester(false)
+requester.SetCookieJar(nil)
+
+// 使用自定义 cookiejar
+cookieJar, _ := cookiejar.New(nil)
+...
+requester.SetCookieJar(cookieJar)
 ```
 
 ## 📚 API 参考
@@ -334,6 +347,7 @@ type Response struct {
     Request            *Request  // 请求体
     ResponseStatusCode int       // 响应状态码
     ResponseBody       []byte    // 响应内容
+    ResponseHeader     http.Header // 响应头
     Error              error     // 错误信息
     StartTime          time.Time // 开始时间
     EndTime            time.Time // 结束时间
@@ -354,7 +368,7 @@ method.DELETE // DELETE 请求
 
 ```go
 method.ContentTypeJSON  // application/json
-method.ContentTypeForm  // application/x-www-form-urlencoded
+method.ContentTypeForm  // application/x-www-form-urlencoded; charset=UTF-8
 method.ContentTypeMulti // multipart/form-data
 method.ContentTypeText  // text/plain
 ```
@@ -545,12 +559,4 @@ requester.SetDisableKeepAlives(false) // 启用 Keep-Alive 提高性能
 ```go
 streamRequester := reqstream.NewStreamRequester(false, 10) // 10个并发
 ```
-
-## 📝 更新日志
-
-### v1.0.0
-- ✨ 初始版本发布
-- 🚀 支持单次提交请求、批量提交请求和流式提交请求
-- 🔧 支持多种内容类型和代理设置
-- 📊 提供详细的响应信息
 

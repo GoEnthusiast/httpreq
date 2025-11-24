@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 	"os"
@@ -292,4 +293,39 @@ func TestSingleGetMethodHasTimeout(t *testing.T) {
 	t.Logf("请求结束时间: %s\n", resp.EndTime.Format("2006-01-02 15:04:05"))
 	t.Logf("请求耗时: %.2fs\n", resp.Duration)
 	t.Logf("响应头: %v\n", resp.ResponseHeader)
+}
+
+// TestSingleCookieJar 设置CookieJar
+func TestSingleCookieJar(t *testing.T) {
+	requester := reqsingle.NewSingleRequester(false)
+	requester.SetCookieJar(nil)
+
+	for i := 1; i <= 3; i++ {
+
+		req := &request.Request{
+			Method:      method.POST,
+			URL:         "https://www.python-spider.com/api/challenge6",
+			Body:        fmt.Sprintf("page=%d", i),
+			ContentType: method.ContentTypeForm,
+			Header: map[string][]string{
+				"authority":    {"www.python-spider.com"},
+				"content-type": {"application/x-www-form-urlencoded; charset=UTF-8"},
+				"origin":       {"https://www.python-spider.com"},
+				"referer":      {"https://www.python-spider.com/challenge/6"},
+				"user-agent":   {"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"},
+			},
+			Timeout: 5 * time.Second,
+		}
+
+		resp := requester.Do(req)
+		if resp.Error != nil {
+			t.Logf("请求错误: %v\n", resp.Error)
+			break
+		}
+
+		t.Logf("响应内容: %s\n", string(resp.ResponseBody))
+		t.Logf("响应头: %v\n", resp.ResponseHeader)
+		t.Logf("请求头: %v\n", resp.Request.Header)
+		t.Logf("\n")
+	}
 }

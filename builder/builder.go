@@ -21,7 +21,7 @@ import (
 // 返回: (io.Reader, string, error) - (请求体读取器, 内容类型, 错误)
 func BuildRequestBody(contentType method.HTTPContentType, body interface{}) (io.Reader, string, error) {
 	if body == nil {
-		return nil, string(contentType), nil
+		return nil, "", nil
 	}
 
 	switch contentType {
@@ -30,9 +30,9 @@ func BuildRequestBody(contentType method.HTTPContentType, body interface{}) (io.
 		// 处理 JSON 内容类型
 		jsonBytes, err := json.Marshal(body)
 		if err != nil {
-			return nil, string(contentType), err
+			return nil, "", err
 		}
-		return bytes.NewReader(jsonBytes), string(contentType), nil
+		return bytes.NewReader(jsonBytes), "", nil
 
 	case method.ContentTypeForm:
 		// Handle form data (application/x-www-form-urlencoded)
@@ -47,10 +47,12 @@ func BuildRequestBody(contentType method.HTTPContentType, body interface{}) (io.
 			for key, val := range v {
 				values.Set(key, fmt.Sprintf("%v", val))
 			}
+		case string:
+			return strings.NewReader(v), "", nil
 		default:
-			return nil, string(contentType), fmt.Errorf("invalid body type for form: %T", body)
+			return nil, "", fmt.Errorf("invalid body type for form: %T", body)
 		}
-		return strings.NewReader(values.Encode()), string(contentType), nil
+		return strings.NewReader(values.Encode()), "", nil
 
 	case method.ContentTypeMulti:
 		// Handle multipart form data (multipart/form-data)
@@ -97,9 +99,9 @@ func BuildRequestBody(contentType method.HTTPContentType, body interface{}) (io.
 		if !ok {
 			return nil, string(contentType), fmt.Errorf("body must be string for text/plain")
 		}
-		return strings.NewReader(str), string(contentType), nil
+		return strings.NewReader(str), "", nil
 
 	default:
-		return nil, string(contentType), fmt.Errorf("unsupported content type: %s", contentType)
+		return nil, "", fmt.Errorf("unsupported content type: %s", contentType)
 	}
 }

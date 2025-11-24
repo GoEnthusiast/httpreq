@@ -56,4 +56,8 @@ type SingleRequester interface {
 	// SetDisableKeepAlives sets whether to disable HTTP Keep-Alive
 	// SetDisableKeepAlives 设置是否禁用 HTTP Keep-Alive
 	SetDisableKeepAlives(disableKeepAlives bool)
+
+	// SetCookieJar sets the cookie jar for the client, Note that this is not concurrency safe
+	// SetCookieJar 设置客户端的 Cookie 罐。注意，这不是并发安全的
+	SetCookieJar(jar http.CookieJar)
 }

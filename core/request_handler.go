@@ -74,7 +74,7 @@ func (h *RequestHandler) ProcessRequest(req *request.Request) *response.Response
 	// Set content-type header
 	// 设置 content-type 头部
 	if contentType != "" {
-		httpReq.Header.Set("Content-Type", contentType)
+		httpReq.Header.Set("content-type", contentType)
 	}
 
 	// Configure proxy settings
