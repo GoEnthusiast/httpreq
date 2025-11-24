@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/cookiejar"
 	"time"
 
 	"github.com/GoEnthusiast/httpreq/builder"
@@ -170,4 +171,15 @@ func (h *RequestHandler) SetExpectContinueTimeout(expectContinueTimeout time.Dur
 // SetDisableKeepAlives 设置是否禁用 HTTP Keep-Alive
 func (h *RequestHandler) SetDisableKeepAlives(disableKeepAlives bool) {
 	h.TransportSetting.SetDisableKeepAlives(disableKeepAlives)
+}
+
+// SetCookieJar sets the cookie jar for the client, Note that this is not concurrency safe
+// SetCookieJar 设置客户端的 Cookie 罐。注意，这不是并发安全的
+func (h *RequestHandler) SetCookieJar(jar http.CookieJar) {
+	if jar == nil {
+		cookieJar, _ := cookiejar.New(nil)
+		h.client.Jar = cookieJar
+	} else {
+		h.client.Jar = jar
+	}
 }
